@@ -1,30 +1,41 @@
-const client = connect("mongodb://127.0.0.1:27017");
+(function () {
+  const globalDBName = "globalDB"; // change the name of the global database here and in backend/mongo.ts
+  const globalDB = connect(`mongodb://127.0.0.1:27017/${globalDBName}`);
 
-globalDB = client.useDb("globalDB"); // change the name of the global database here and in backend/mongo.ts
+  // create two collections in the global database - orgs and users
+  // orgs will contain your tenant information and users will contain your user information
+  // change the name of the collections here
 
-// create two collections in the global database - orgs and users
-// orgs will contain your tenant information and users will contain your user information
-// change the name of the collections here
-globalDB.createCollection("orgs");
-globalDB.createCollection("users");
+  const orgCollectionName = "orgs";
+  print(`Creating ${orgCollectionName} collection in ${globalDBName}`);
+  globalDB.createCollection(orgCollectionName);
+  print(`${orgCollectionName} created in ${globalDBName}`);
 
-const now = new Date().toISOString();
+  const userCollectionName = "users";
+  print(`Creating ${userCollectionName} collection in ${globalDBName}`);
+  globalDB.createCollection(userCollectionName);
+  print(`${userCollectionName} created in ${globalDBName}`);
 
-const { insertedId: orgId, acknowledged } = db.orgs.insertOne({
-  name: "Dev",
-  onboardingComplete: false,
-  createdAt: now,
-  updatedAt: now,
-});
+  const now = new Date().toISOString();
 
-if (!acknowledged) {
-  throw new Error("Could not create org");
-}
+  const { insertedId: orgId, acknowledged } = globalDB[
+    orgCollectionName
+  ].insertOne({
+    name: "Dev",
+    onboardingComplete: false,
+    createdAt: now,
+    updatedAt: now,
+  });
 
-const username = "admin";
-const password = "admin";
-const { insertedId: userId, acknowledged: userAcknowledged } =
-  db.users.insertOne({
+  if (!acknowledged) {
+    throw new Error(`Could not add document in ${orgCollectionName}`);
+  }
+
+  const username = "admin";
+  const password = "admin";
+  const { insertedId: userId, acknowledged: userAcknowledged } = globalDB[
+    userCollectionName
+  ].insertOne({
     username,
     password,
     orgId,
@@ -34,10 +45,11 @@ const { insertedId: userId, acknowledged: userAcknowledged } =
     updatedAt: now,
   });
 
-if (!userAcknowledged) {
-  throw new Error("Could not create user");
-}
+  if (!userAcknowledged) {
+    throw new Error(`Could not add document in ${userCollectionName}`);
+  }
 
-print(
-  `Created org with id ${orgId} and user with id ${userId} with username:password ${username}:${password}`
-);
+  print(
+    `Created ${orgCollectionName} with id ${orgId} and ${userCollectionName} with id ${userId} with username:password ${username}:${password}`
+  );
+})();
